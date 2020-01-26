@@ -1,120 +1,57 @@
-meta-rockpro64-hacks
-====================
+# meta-rockpro64-hacks
 
-Yocto BSP layer for the PINE64 ROCKPro64 board- https://www.pine64.org/?page_id=61454
+This README file contains information on the contents of the meta-rockpro64-hacks layer.
+The layer targets the [PINE64 ROCKPro64 board](https://www.pine64.org/?page_id=61454).
+It a fork of [csonsino/meta-rockpro64-hacks](https://github.com/csonsino/meta-rockpro64-hacks) with some
+cleanups and stripped down to the minimum to support the board.
+Please see the readme in the original project and the corresponding sections below for details.
 
-Description
------------
-This is a hardware specific BSP overlay for the PINE64 ROCKPro64 board.
+## Dependencies
 
-**I would prefer if this layer did not exist.**
+This layer depends on:
 
-It would be nice if the [meta-rockchip layer](https://github.com/rockchip-linux/meta-rockchip) fully supported this board.  Recent commits to [rockchip-linux kernel](https://github.com/rockchip-linux/kernel) have started to add some of the necessary files (although the dts does not seem to be usable), but the meta-rockchip layer seems to be behind.
+* URI: meta-rockchip
+* branch: yocto-next
 
-In order to create a bootable ROCKPro64 image, this layers essentially uses some files from [ayufan's rock64 repo](https://github.com/ayufan-rock64) instead of the default rockchip files.
+## Table of Contents
 
-Notes
------
-* Serial Console - With the resulting image, the serial console can be connected as described in the [HOW TO - Connect the serial console](https://forum.pine64.org/showthread.php?tid=6387) forum post. The TX line can be connected before power on and can be used with U-Boot, but it must be disconnected before booting the Linux Kernel.  Any attempts to connect the TX line after the kernel starts to boot seems to result in a complete system freeze.  After the kernel boots, HDMI + USB Keyboard can be used, or additional packages can be included in the image to enable and configure Ethernet network access.
-* Boot Warnings - During boot, several driver and firmware load errors can be observed on the serial console (the Device Tree, firmware, and drivers have been modified).  The failures related to these messages do not appear to be fatal.
+  I. Configure yocto/oe environment  
+ II. Changes for the RockPro64 implemented in this layer
+III. Booting your device
+ IV. Booting your device
 
-Standard poky Usage
--------------------
-For information regarding environment setup and prerequisites for `poky`, please refer to the [Yocto Project Quick Start documentation](https://www.yoctoproject.org/docs/2.4.4/yocto-project-qs/yocto-project-qs.html)
+### I. Configure yocto/oe environment
+This layer adds support for the Pine RockPro64, which is not fully supported by
+the Rockchip BSP layer. To build for this device, use
 
-Clone the `rocko` branch of `poky`:
-```
-git clone -b rocko git://git.yoctoproject.org/poky.git poky-rocko
-cd poky-rocko
-```
+MACHINE ?= "rockpro64"
 
-Clone the dependency meta layers:
-```
-git clone -b master git://github.com/OSSystems/meta-browser
-git clone -b rocko git://git.openembedded.org/meta-openembedded
-git clone -b rocko git://github.com/meta-qt5/meta-qt5
-git clone -b rocko git://github.com/rockchip-linux/meta-rockchip
-git clone -b rocko git://github.com/rockchip-linux/meta-rockchip-extra
-git clone -b rocko git://github.com/meta-rust/meta-rust.git
-git clone -b rocko git://github.com/csonsino/meta-rockpro64-hacks.git
-```
+in your local.conf file. Then follow the instructions in the meta-rockchip layer.
 
-Source the environment setup script to create the `build` directory
-```
-source oe-init-build-env
-```
+### II. Changes for the RockPro64 implemented in this layer
+(I assume here, that the RockPro64 is equiped with an eMMC)
 
-Edit `conf/bblayers.conf`, adding the layers from above (plus some extra `meta-openembedded` layers).  Add the following snippet, replacing `<poky-rocko>` with the path where `poky-rocko` was cloned:
-```
-BBLAYERS += " \
-  <poky-rocko>/meta-openembedded/meta-oe \
-  <poky-rocko>/meta-openembedded/meta-multimedia \
-  <poky-rocko>/meta-openembedded/meta-networking \
-  <poky-rocko>/meta-openembedded/meta-filesystems \
-  <poky-rocko>/meta-openembedded/meta-python \
-  <poky-rocko>/meta-browser \
-  <poky-rocko>/meta-qt5 \
-  <poky-rocko>/meta-rockchip \
-  <poky-rocko>/meta-rockchip-extra \
-  <poky-rocko>/meta-rust \
-  <poky-rocko>/meta-rockpro64-hacks \
-"
-```
+First, the kernel tree maintained by [rockchip]() is substituted by the kernel tree maintained by [ayufan](https://github.com/ayufan-rock64/linux-kernel).
+Two custom patches are applied to the kernel
+1. append 'root=/dev/mmcblk1p4' to the kernel command line
+2. set the dmc frequencies back to the ones used in rockchip's kernel tree
 
-Edit conf/local.conf, setting the following values:
-```
-MACHINE ??= "rockpro64"
-DISTRO ?= "rk-none"
-```
+I've also added the firmware for the ap6359sa BT/WIFI module.
 
-Build an image:
-```
-bitbake rk-image-base
-```
+### III. Booting your device
+For convinience, here a short summary how to flash/boot the image using [upgrade_tool](http://opensource.rock-chips.com/wiki_Upgradetool) (for more details see meta-rockchip layer).
 
-Rockchip poky Usage
--------------------
-These instructions mostly follow the standard directions for setting up the environment (except for the slight `repo init` deviation).  See http://rockchip.wikidot.com/yocto-user-guide
+1. Connect the RockPro64 via the USB-C port to your PC and put it into rockusb mode
+  * if eMMC short the two pins next to the eMMC and the SPI Flash
+  * if SD, remove it
+  and reset/power-on the device.
+2. Go to miniloader
+  $ upgrade_tool db \<IMAGE PATH\>/loader.bin
+3. Flash the image
+  $ upgrade_tool wl 0 \<IMAGE PATH\>/\<IMAGE NAME\>.wic
+4. Reset the device
+  $ upgrade_tool rd
 
-Create the environment directory:
-```
-mkdir rk-yocto-bsp
-cd rk-yocto-bsp
-```
-
-Clone the various repositories:
-```
-repo init --repo-branch=stable --repo-url=https://github.com/rockchip-linux/repo -u https://github.com/rockchip-linux/manifests -b yocto -m rocko.xml
-repo sync
-```
-
-Clone the additional repositories:
-```
-cd sources
-git clone -b rocko git://github.com/meta-rust/meta-rust.git
-git clone -b rocko git://github.com/csonsino/meta-rockpro64-hacks.git
-cd ..
-```
-
-Make sure that the prerequisite packages are installed:
-```
-sudo apt-get install gawk wget git-core diffstat unzip texinfo build-essential chrpath socat cpio python python3 pip3 pexpect libsdl1.2-dev xterm make xsltproc docbook-utils fop dblatex xmlto python-git pv
-```
-
-Initialize the environment:
-```
-MACHINE=rockpro64 DISTRO=rk-none . ./setup-environment -b build
-```
-
-Edit the `conf/bblayers.conf` file, adding the following snippet to the bottom of the file:
-```
-BBLAYERS += " \
-  ${BSPDIR}/sources/meta-rust \
-  ${BSPDIR}/sources/meta-rockpro64-hacks \
-"
-```
-
-Build an image:
-```
-bitbake rk-image-base
-```
+### IV. Debugging
+screen /dev/ttyUSB0 115200
+busybox microcom -s 115200 /dev/ttyUSB0 
