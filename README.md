@@ -2,8 +2,8 @@
 
 This README file contains information on the contents of the meta-rockpro64-hacks layer.
 The layer targets the [PINE64 ROCKPro64 board](https://www.pine64.org/?page_id=61454).
-It a fork of [csonsino/meta-rockpro64-hacks](https://github.com/csonsino/meta-rockpro64-hacks) with some
-cleanups and stripped down to the minimum to support the board.
+It's a fork of [csonsino/meta-rockpro64-hacks](https://github.com/csonsino/meta-rockpro64-hacks) with some
+cleanups and it's stripped down to the minimum to support the board.
 Please see the readme in the original project and the corresponding sections below for details.
 
 ## Dependencies
@@ -24,14 +24,16 @@ III. Booting your device
 This layer adds support for the Pine RockPro64, which is not fully supported by
 the Rockchip BSP layer. To build for this device, use
 
+```
 MACHINE ?= "rockpro64"
+```
 
 in your local.conf file. Then follow the instructions in the meta-rockchip layer.
 
 ### II. Changes for the RockPro64 implemented in this layer
 (I assume here, that the RockPro64 is equiped with an eMMC)
 
-First, the kernel tree maintained by [rockchip]() is substituted by the kernel tree maintained by [ayufan](https://github.com/ayufan-rock64/linux-kernel).
+First, the kernel tree maintained by [rockchip](https://github.com/rockchip-linux/kernel) is substituted by the kernel tree maintained by [ayufan](https://github.com/ayufan-rock64/linux-kernel).
 Two custom patches are applied to the kernel
 1. append 'root=/dev/mmcblk1p4' to the kernel command line
 2. set the dmc frequencies back to the ones used in rockchip's kernel tree
@@ -53,5 +55,8 @@ For convinience, here a short summary how to flash/boot the image using [upgrade
   $ upgrade_tool rd
 
 ### IV. Debugging
-screen /dev/ttyUSB0 115200
-busybox microcom -s 115200 /dev/ttyUSB0 
+Use either one of the folling commands after wireing the serial like explained [here](https://forum.pine64.org/showthread.php?tid=6387):
+```
+screen /dev/ttyUSB0 1500000
+busybox microcom -s 1500000 /dev/ttyUSB0 
+```
