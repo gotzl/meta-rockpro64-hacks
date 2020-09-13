@@ -8,7 +8,7 @@ require recipes-kernel/linux/linux-rockchip.inc
 SRC_URI = " \
 	git://github.com/ayufan-rock64/linux-kernel;protocol=git;branch=release-4.4.202;nocheckout=1 \
 	"
-SRCREV = "d3f1be0ed310d118ccf04cf9b691c92a914a97a9"
+SRCREV = "fd44923862132546b4f797fbe0317205afc98b84"
 
 LINUX_VERSION = "4.4"
 LINUX_VERSION_EXTENSION_append = "-ayufan"
