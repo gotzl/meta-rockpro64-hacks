@@ -9,7 +9,7 @@ SRC_URI = "git://github.com/LibreELEC/brcmfmac_sdio-firmware.git \
 
 S = "${WORKDIR}/git"
 
-inherit allarch deploy
+inherit allarch
 
 do_compile() {
 	echo "do nothing"
