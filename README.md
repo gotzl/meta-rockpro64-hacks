@@ -11,47 +11,60 @@ Please see the readme in the original project and the corresponding sections bel
 This layer depends on:
 
 * URI: meta-rockchip
-* branch: yocto-next
+* branch: dunfell
 
 ## Table of Contents
 
   I. Configure yocto/oe environment  
- II. Changes for the RockPro64 implemented in this layer
-III. Booting your device
+ II. Changes for the RockPro64 implemented in this layer  
+ III. Booting your device  
  IV. Booting your device
 
 ### I. Configure yocto/oe environment
 This layer adds support for the Pine RockPro64, which is not fully supported by
-the Rockchip BSP layer. To build for this device, use
+the meta-rockchip layer. To build for this device, use
 
 ```
 MACHINE ?= "rockpro64"
 ```
 
-in your local.conf file. Then follow the instructions in the meta-rockchip layer.
+in your local.conf file.
 
 ### II. Changes for the RockPro64 implemented in this layer
 (I assume here, that the RockPro64 is equiped with an eMMC)
 
-First, the kernel tree maintained by [rockchip](https://github.com/rockchip-linux/kernel) is substituted by the kernel tree maintained by [ayufan](https://github.com/ayufan-rock64/linux-kernel).
-Two custom patches are applied to the kernel
-1. append 'root=/dev/mmcblk1p4' to the kernel command line
-2. set the dmc frequencies back to the ones used in rockchip's kernel tree
+First, this uses the linux-yocto kernel with a patch to get ap6359sa BT/WIFI module working.
+It also uses the most recent u-boot, which enables basically all features you'd expect (USB/HDMI/...).
+Finally, the wic generation is broken and the device won't boot with the fitImage. This is not fixed
+yet and step III. above needs an additional step... To create the boot.img mentioned there, do s.t. like this:
 
-I've also added the firmware for the ap6359sa BT/WIFI module.
+```bash
+mkdir -p boot/extlinux
+cp linux-rockpro64-standard-build/arch/arm64/boot/Image  boot/Image 
+cp linux-rockpro64-standard-build/arch/arm64/boot/dts/rockchip/rk3399-rockpro64.dtb boot/rk3399-rockpro64.dtb 
+cat <<EOF > boot/extlinux/extlinux.conf
+label rockchip-kernel-5.6
+    kernel /Image
+    fdt /rk3399-rockpro64.dtb
+    append earlycon=uart8250,mmio32,0xff1a0000 root=/dev/mmcblk2p7 usb-storage.quirks=0x0bc2:0x231a:u rootwait rootfstype=ext4 init=/sbin/init
+EOF
+genext2fs -b 32768 -d boot/ -i 8192 -U boot.img
+```
+If you don't have a BT/WIFI module, use `/dev/mmcblk1p7`.
 
 ### III. Booting your device
-For convinience, here a short summary how to flash/boot the image using [upgrade_tool](http://opensource.rock-chips.com/wiki_Upgradetool) (for more details see meta-rockchip layer).
+For convinience, here a short summary how to flash/boot the image using [upgrade_tool](http://opensource.rock-chips.com/wiki_Upgradetool).
 
 1. Connect the RockPro64 via the USB-C port to your PC and put it into rockusb mode
   * if eMMC short the two pins next to the eMMC and the SPI Flash
   * if SD, remove it
   and reset/power-on the device.
-2. Go to miniloader
+2. Go to miniloader  
   $ upgrade_tool db \<IMAGE PATH\>/loader.bin
-3. Flash the image
-  $ upgrade_tool wl 0 \<IMAGE PATH\>/\<IMAGE NAME\>.wic
-4. Reset the device
+3. Flash the image  
+    a. $ upgrade_tool wl 0 \<IMAGE PATH\>/\<IMAGE NAME\>.wic  
+    b. $ upgrade_tool wl 0x8000 boot.img
+4. Reset the device  
   $ upgrade_tool rd
 
 ### IV. Debugging

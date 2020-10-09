@@ -1,0 +1,7 @@
+# Copyright (C) 2020 Garmin Ltd. or its subsidiaries
+# Released under the MIT license (see COPYING.MIT for the terms)
+
+include rk3399-boot.fixed.wks
+part / --align 131072 --ondisk ${RK_BOOT_DEVICE} --source rootfs --fstype=ext4 --label root
+
+bootloader --ptable gpt --append="console=tty1 console=ttyS2,1500000n8 rw root=/dev/${RK_BOOT_DEVICE}p7 rootfstype=ext4 init=/sbin/init rootwait earlycon=uart8250,mmio32,0xff1a0000"
